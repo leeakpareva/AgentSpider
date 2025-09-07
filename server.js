@@ -156,11 +156,11 @@ app.post('/api/chat', async (req, res) => {
 // PiCrawler control endpoint
 app.post('/api/crawler', async (req, res) => {
   try {
-    const { command } = req.body;
+    const { command, speed = 50 } = req.body;
     
     // Use the actual PiCrawler control script
     const scriptPath = '/home/leeakpareva/pi-dashboard/pi-dashboard/picrawler_control.py';
-    const actualCommand = `sudo python3 ${scriptPath} ${command}`;
+    const actualCommand = `sudo python3 ${scriptPath} ${command} ${speed}`;
     
     // Execute the command
     exec(actualCommand, (error, stdout, stderr) => {
@@ -168,16 +168,87 @@ app.post('/api/crawler', async (req, res) => {
         console.error(`PiCrawler error: ${error.message}`);
         console.error(`stderr: ${stderr}`);
       } else {
-        console.log(`PiCrawler command executed: ${command}`);
+        console.log(`PiCrawler command executed: ${command} with speed ${speed}%`);
         console.log(`stdout: ${stdout}`);
       }
     });
     
-    res.json({ success: true, command, message: `PiCrawler ${command} executed` });
+    res.json({ success: true, command, speed, message: `PiCrawler ${command} executed at ${speed}% speed` });
 
   } catch (error) {
     console.error('Crawler control error:', error);
     res.status(500).json({ error: 'Failed to control crawler' });
+  }
+});
+
+// Camera streaming endpoints
+app.get('/api/camera/stream', async (req, res) => {
+  try {
+    const scriptPath = '/home/leeakpareva/pi-dashboard/pi-dashboard/camera_stream.py';
+    const command = `sudo python3 ${scriptPath} frame`;
+    
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Camera stream error: ${error.message}`);
+        res.status(500).json({ error: 'Failed to get camera frame' });
+      } else {
+        try {
+          const result = JSON.parse(stdout);
+          res.json(result);
+        } catch (parseError) {
+          res.status(500).json({ error: 'Failed to parse camera data' });
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Camera stream error:', error);
+    res.status(500).json({ error: 'Failed to get camera stream' });
+  }
+});
+
+// Camera photo capture
+app.post('/api/camera/photo', async (req, res) => {
+  try {
+    const scriptPath = '/home/leeakpareva/pi-dashboard/pi-dashboard/camera_stream.py';
+    const command = `sudo python3 ${scriptPath} photo`;
+    
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Photo capture error: ${error.message}`);
+        res.status(500).json({ error: 'Failed to capture photo' });
+      } else {
+        try {
+          const result = JSON.parse(stdout);
+          res.json(result);
+        } catch (parseError) {
+          res.status(500).json({ error: 'Failed to parse photo result' });
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Photo capture error:', error);
+    res.status(500).json({ error: 'Failed to capture photo' });
+  }
+});
+
+// Start/stop camera streaming
+app.post('/api/camera/control', async (req, res) => {
+  try {
+    const { action } = req.body; // 'start' or 'stop'
+    const scriptPath = '/home/leeakpareva/pi-dashboard/pi-dashboard/camera_stream.py';
+    const command = `sudo python3 ${scriptPath} ${action}`;
+    
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Camera control error: ${error.message}`);
+        res.status(500).json({ error: `Failed to ${action} camera` });
+      } else {
+        res.json({ success: true, action, message: `Camera ${action}ed successfully` });
+      }
+    });
+  } catch (error) {
+    console.error('Camera control error:', error);
+    res.status(500).json({ error: 'Failed to control camera' });
   }
 });
 
