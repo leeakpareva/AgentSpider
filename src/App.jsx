@@ -17,6 +17,7 @@ import {
   Cell
 } from 'recharts';
 import SidePanel from './components/SidePanel';
+import { API_ENDPOINTS } from './config/api';
 import './App.css';
 
 const App = () => {
@@ -28,22 +29,15 @@ const App = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Determine API endpoint based on environment
-        const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '192.168.0.32';
-        const apiEndpoint = isProduction 
-          ? '/api/system-status' // Use relative path for production
-          : 'http://192.168.0.32:3001/api/system-status'; // Use local endpoint for development
-        
-        const response = await axios.get(apiEndpoint);
+        const response = await axios.get(API_ENDPOINTS.systemStatus);
         setSystemData(response.data);
         setLoading(false);
       } catch (err) {
         console.error('API Error:', err);
         
-        // If we're in production and can't reach the API, show demo data
-        const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '192.168.0.32';
-        if (isProduction) {
-          // Set demo data for Vercel deployment
+        // Handle error gracefully
+        if (err.response) {
+          // Server responded with error
           setSystemData({
             uptime: '7 days, 12 hours, 30 minutes',
             memory: { total: 4096, used: 2048, free: 2048, usedPercent: 50 },

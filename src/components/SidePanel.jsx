@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { API_ENDPOINTS } from '../config/api';
 import './SidePanel.css';
 
 const SidePanel = ({ isOpen, onClose }) => {
@@ -28,7 +29,7 @@ const SidePanel = ({ isOpen, onClose }) => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://192.168.0.32:3001/api/chat', {
+      const response = await fetch(API_ENDPOINTS.chat, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -47,7 +48,7 @@ const SidePanel = ({ isOpen, onClose }) => {
 
   const sendCrawlerCommand = async (command) => {
     try {
-      await fetch('http://192.168.0.32:3001/api/crawler', {
+      await fetch(API_ENDPOINTS.crawler, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -218,7 +219,7 @@ const SidePanel = ({ isOpen, onClose }) => {
         <div className="about-item">
           <h4>🌐 System Info</h4>
           <p><strong>Dashboard:</strong> http://192.168.0.32:5173</p>
-          <p><strong>API:</strong> http://192.168.0.32:3001</p>
+          <p><strong>Status:</strong> Connected</p>
           <p><strong>Version:</strong> 1.0.0</p>
         </div>
       </div>
