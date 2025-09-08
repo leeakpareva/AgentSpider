@@ -6,12 +6,8 @@ const SidePanel = ({ isOpen, onClose }) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [cameraFrame, setCameraFrame] = useState(null);
-  const [cameraActive, setCameraActive] = useState(false);
-  const [isCapturing, setIsCapturing] = useState(false);
   const [robotSpeed, setRobotSpeed] = useState(50);
   const messagesEndRef = useRef(null);
-  const cameraIntervalRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -21,84 +17,7 @@ const SidePanel = ({ isOpen, onClose }) => {
     scrollToBottom();
   }, [messages]);
 
-  useEffect(() => {
-    // Start camera stream when remote tab is active
-    if (activeTab === 'remote' && isOpen) {
-      startCameraStream();
-    } else {
-      stopCameraStream();
-    }
 
-    return () => {
-      stopCameraStream();
-    };
-  }, [activeTab, isOpen]);
-
-  const startCameraStream = async () => {
-    try {
-      await fetch('http://192.168.0.32:3001/api/camera/control', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'start' }),
-      });
-
-      setCameraActive(true);
-      
-      // Start fetching frames
-      cameraIntervalRef.current = setInterval(async () => {
-        try {
-          const response = await fetch('http://192.168.0.32:3001/api/camera/stream');
-          const data = await response.json();
-          if (data.frame) {
-            setCameraFrame(data.frame);
-          }
-        } catch (error) {
-          console.error('Camera stream error:', error);
-        }
-      }, 200); // 5 FPS
-    } catch (error) {
-      console.error('Failed to start camera:', error);
-    }
-  };
-
-  const stopCameraStream = () => {
-    if (cameraIntervalRef.current) {
-      clearInterval(cameraIntervalRef.current);
-      cameraIntervalRef.current = null;
-    }
-    
-    setCameraActive(false);
-    setCameraFrame(null);
-    
-    fetch('http://192.168.0.32:3001/api/camera/control', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'stop' }),
-    }).catch(console.error);
-  };
-
-  const capturePhoto = async () => {
-    if (isCapturing) return;
-    
-    setIsCapturing(true);
-    try {
-      const response = await fetch('http://192.168.0.32:3001/api/camera/photo', {
-        method: 'POST',
-      });
-      const result = await response.json();
-      
-      if (result.success) {
-        alert('Photo captured successfully!');
-      } else {
-        alert('Failed to capture photo: ' + result.error);
-      }
-    } catch (error) {
-      console.error('Photo capture error:', error);
-      alert('Failed to capture photo');
-    } finally {
-      setIsCapturing(false);
-    }
-  };
 
   const sendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
@@ -143,33 +62,6 @@ const SidePanel = ({ isOpen, onClose }) => {
   const renderRemoteControl = () => (
     <div className="remote-control">
       <h3>🕷️ PiCrawler Control</h3>
-      
-      {/* Live Camera Feed */}
-      <div className="control-section">
-        <h4>🎥 Live Camera</h4>
-        <div className="camera-feed">
-          {cameraFrame ? (
-            <img 
-              src={`data:image/jpeg;base64,${cameraFrame}`}
-              alt="PiCrawler Camera Feed"
-              className="camera-image"
-            />
-          ) : (
-            <div className="camera-placeholder">
-              {cameraActive ? '📹 Starting camera...' : '📷 Camera offline'}
-            </div>
-          )}
-          <div className="camera-controls">
-            <button 
-              className="control-btn photo" 
-              onClick={capturePhoto}
-              disabled={isCapturing || !cameraActive}
-            >
-              {isCapturing ? '⏳ Capturing...' : '📸 Take Photo'}
-            </button>
-          </div>
-        </div>
-      </div>
       
       <div className="control-section">
         <h4>Movement</h4>
@@ -225,28 +117,6 @@ const SidePanel = ({ isOpen, onClose }) => {
         </div>
       </div>
 
-      <div className="control-section">
-        <h4>Camera</h4>
-        <div className="camera-controls">
-          <button className="control-btn" onClick={() => sendCrawlerCommand('camera_up')}>
-            🔼 Up
-          </button>
-          <div className="movement-row">
-            <button className="control-btn" onClick={() => sendCrawlerCommand('camera_left')}>
-              ◀️ Left
-            </button>
-            <button className="control-btn" onClick={() => sendCrawlerCommand('camera_center')}>
-              🎯 Center
-            </button>
-            <button className="control-btn" onClick={() => sendCrawlerCommand('camera_right')}>
-              ▶️ Right
-            </button>
-          </div>
-          <button className="control-btn" onClick={() => sendCrawlerCommand('camera_down')}>
-            🔽 Down
-          </button>
-        </div>
-      </div>
 
       <div className="control-section">
         <h4>Actions</h4>
