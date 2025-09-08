@@ -1,9 +1,7 @@
 {
-  "buildCommand": "npm install && npm run build",
+  "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "installCommand": "npm install",
   "framework": null,
-  "rootDirectory": ".",
   "functions": {
     "api/*.js": {
       "maxDuration": 10
